@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow Pro | Dynamic Task Manager & Productivity Tracker</title>
+  <meta name="description" content="Production-ready Task Manager and Productivity Tracker with full CRUD operations, localStorage persistence, drag-and-drop reordering, and analytics.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%220%22%20100%20100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        screens: {
+          'xs': '420px',
+          'sm': '640px',
+          'md': '768px',
+          'lg': '1024px',
+          'xl': '1280px',
+        },
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              300: '#a5b4fc',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.25s ease-out',
+            'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            'scale-in': 'scaleIn 0.2s ease-out',
+            'pulse-subtle': 'pulseSubtle 2s infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { opacity: '0', transform: 'translateY(12px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            scaleIn: {
+              '0%': { opacity: '0', transform: 'scale(0.95)' },
+              '100%': { opacity: '1', transform: 'scale(1)' },
+            },
+            pulseSubtle: {
+              '0%, 100%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(1.03)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-50 dark:bg-[#0B0F19] text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased transition-colors duration-300 selection:bg-brand-500 selection:text-white overflow-x-hidden">
+
+  <!-- Ambient background glow elements -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10" aria-hidden="true">
+    <div class="absolute -top-40 -left-40 w-72 sm:w-96 h-72 sm:h-96 bg-brand-500/10 dark:bg-brand-600/15 rounded-full blur-3xl"></div>
+    <div class="absolute top-1/3 -right-40 w-72 sm:w-96 h-72 sm:h-96 bg-purple-500/10 dark:bg-purple-600/15 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-40 left-1/3 w-72 sm:w-96 h-72 sm:h-96 bg-emerald-500/10 dark:bg-emerald-600/10 rounded-full blur-3xl"></div>
+  </div>
+
+  <div class="max-w-6xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-8 space-y-6 sm:space-y-8">
+    
+    <!-- Navigation header -->
+    <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800/80">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-brand-600 to-violet-500 flex items-center justify-center shadow-lg shadow-brand-500/25 ring-2 ring-brand-400/20 flex-shrink-0">
+          <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-brand-600 to-violet-600 dark:from-white dark:via-slate-100 dark:to-brand-300 bg-clip-text text-transparent truncate">
+              TaskFlow Pro
+            </h1>
+            <span class="px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded-full bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-700/50">
+              CRUD v2.0
+            </span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium truncate">
+            Dynamic Task Manager & Productivity Tracker
+          </p>
+        </div>
+      </div>
+
+      <!-- Quick action controls -->
+      <div class="flex items-center flex-wrap gap-2 sm:gap-2.5">
+        <div id="liveDateBadge" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300 backdrop-blur shadow-sm">
+          <svg class="w-4 h-4 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span id="currentDateText">Loading date...</span>
+        </div>
+
+        <button id="audioToggleBtn" title="Toggle Sound Effects" class="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <svg id="soundOnIcon" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+          </svg>
+          <svg id="soundOffIcon" class="w-4 h-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+          </svg>
+        </button>
+
+        <button id="loadSampleDataBtn" title="Populate Demo Data" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm">
+          <svg class="w-3.5 h-3.5 text-brand-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+          </svg>
+          <span class="hidden xs:inline">Demo Tasks</span>
+        </button>
+
+        <div class="relative group">
+          <button id="backupMenuBtn" class="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors shadow-sm focus:outline-none" title="Backup & Restore">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+            </svg>
+          </button>
+          <div class="absolute right-0 mt-2 w-44 py-1.5 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 hidden group-hover:block z-30">
+            <button id="exportTasksBtn" class="w-full text-left px-3.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2">
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+              Export JSON Backup
+            </button>
+            <label for="importTasksInput" class="w-full cursor-pointer text-left px-3.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2">
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Import Tasks JSON
+            </label>
+            <input type="file" id="importTasksInput" accept=".json" class="hidden">
+          </div>
+        </div>
+
+        <button id="themeToggleBtn" aria-label="Toggle Theme" class="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <svg id="sunIcon" class="w-4 h-4 hidden dark:block text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9h-1m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <svg id="moonIcon" class="w-4 h-4 block dark:hidden text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Productivity summary cards -->
+    <section aria-label="Productivity Analytics" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <!-- Total Tasks Card -->
+      <div class="relative overflow-hidden p-3.5 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 shadow-sm hover:shadow-md transition-all duration-300 group">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">Total Tasks</span>
+          <div class="p-1.5 sm:p-2 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 group-hover:scale-110 transition-transform flex-shrink-0">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 sm:mt-3 flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
+          <span id="statTotal" class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">0</span>
+          <span class="text-[11px] sm:text-xs text-slate-400 font-medium">all entries</span>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-500 to-violet-500"></div>
+      </div>
+
+      <!-- Pending / Active Tasks Card -->
+      <div class="relative overflow-hidden p-3.5 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 shadow-sm hover:shadow-md transition-all duration-300 group">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">In Progress</span>
+          <div class="p-1.5 sm:p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform flex-shrink-0">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 sm:mt-3 flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
+          <span id="statActive" class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">0</span>
+          <span class="text-[11px] sm:text-xs text-slate-400 font-medium">pending</span>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500"></div>
+      </div>
+
+      <!-- Completed Tasks Card -->
+      <div class="relative overflow-hidden p-3.5 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 shadow-sm hover:shadow-md transition-all duration-300 group">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">Completed</span>
+          <div class="p-1.5 sm:p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform flex-shrink-0">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 sm:mt-3 flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
+          <span id="statCompleted" class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">0</span>
+          <span id="statCompletedRatio" class="text-[11px] sm:text-xs text-emerald-600 dark:text-emerald-400 font-semibold">0% done</span>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
+      </div>
+
+      <!-- Overdue Alerts Card -->
+      <div class="relative overflow-hidden p-3.5 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 shadow-sm hover:shadow-md transition-all duration-300 group">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">Overdue</span>
+          <div class="p-1.5 sm:p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform flex-shrink-0">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+        </div>
+        <div class="mt-2 sm:mt-3 flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
+          <span id="statOverdue" class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">0</span>
+          <span id="statOverdueLabel" class="text-[11px] sm:text-xs text-slate-400 font-medium truncate">past due</span>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 to-red-600"></div>
+      </div>
+    </section>
+
+    <!-- Productivity progress and quotes -->
+    <section class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-brand-900/10 via-purple-900/10 to-emerald-900/10 dark:from-slate-900/90 dark:to-slate-900/80 border border-slate-200 dark:border-slate-800/80 shadow-sm backdrop-blur">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-2.5">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+            Productivity Momentum
+          </span>
+          <span id="momentumBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+            Let's get started!
+          </span>
+        </div>
+        <span id="completionRateText" class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
+          0% Completed
+        </span>
+      </div>
+      
+      <div class="w-full h-2.5 sm:h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden p-0.5 shadow-inner">
+        <div id="productivityProgressBar" class="h-full bg-gradient-to-r from-brand-500 via-purple-500 to-emerald-400 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+      </div>
+
+      <div class="mt-3 flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+        <p id="motivationalMessage" class="italic truncate flex-1 min-w-0">
+          "Focus on being productive instead of busy." — Tim Ferriss
+        </p>
+        <span class="hidden md:inline font-medium flex-shrink-0">Shortcuts: <kbd class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-[10px] text-slate-700 dark:text-slate-300 font-mono">Ctrl+K</kbd> Search • <kbd class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-[10px] text-slate-700 dark:text-slate-300 font-mono">N</kbd> New</span>
+      </div>
+    </section>
+
+    <!-- Task Creation Form -->
+    <section class="bg-white dark:bg-slate-900/90 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-md">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span class="w-2 h-4 sm:h-5 bg-brand-600 rounded-full"></span>
+          Add New Task
+        </h2>
+        <span class="text-xs text-slate-400 font-medium">Hit Enter or click Create Task</span>
+      </div>
+
+      <form id="taskForm" class="space-y-3.5 sm:space-y-4">
+        <div>
+          <label for="taskTitleInput" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+            Task Title <span class="text-rose-500">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="taskTitleInput" 
+            required
+            maxlength="140"
+            placeholder="e.g. Finish quarterly project presentation..." 
+            class="w-full px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all shadow-inner"
+          >
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <!-- Category selector -->
+          <div>
+            <label for="taskCategorySelect" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              Category
+            </label>
+            <div class="relative">
+              <select 
+                id="taskCategorySelect" 
+                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer appearance-none transition-all"
+              >
+                <option value="Work">💼 Work</option>
+                <option value="Personal">🏡 Personal</option>
+                <option value="Study">📚 Study</option>
+                <option value="Health">🏃 Health</option>
+                <option value="Finance">💰 Finance</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Priority selector -->
+          <div>
+            <label for="taskPrioritySelect" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              Priority Level
+            </label>
+            <div class="relative">
+              <select 
+                id="taskPrioritySelect" 
+                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer appearance-none transition-all"
+              >
+                <option value="Medium" selected>⚡ Medium Priority</option>
+                <option value="High">🔥 High Priority</option>
+                <option value="Low">🌱 Low Priority</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Due date picker -->
+          <div>
+            <label for="taskDueDateInput" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              Due Date
+            </label>
+            <input 
+              type="date" 
+              id="taskDueDateInput" 
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer transition-all"
+            >
+          </div>
+        </div>
+
+        <!-- Optional description textarea -->
+        <div class="pt-1">
+          <button type="button" id="toggleNotesBtn" class="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1 mb-1.5">
+            <span id="notesChevron">+ Add optional description/notes</span>
+          </button>
+          <textarea 
+            id="taskNotesInput" 
+            rows="2" 
+            placeholder="Add any extra links, sub-steps, or guidelines..." 
+            class="hidden w-full px-3.5 py-2.5 sm:px-4 sm:py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all shadow-inner"
+          ></textarea>
+        </div>
+
+        <div class="flex items-center justify-end pt-2">
+          <button 
+            type="submit" 
+            id="addTaskBtn"
+            class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2 group"
+          >
+            <svg class="w-4 h-4 transition-transform group-hover:rotate-90 duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Create Task</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Search and filtering controls -->
+    <section class="space-y-3 sm:space-y-4">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 bg-white dark:bg-slate-900/70 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur">
+        
+        <!-- Live search bar -->
+        <div class="relative flex-1 min-w-0">
+          <div class="pointer-events-none absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Search tasks... (Ctrl+K or /)" 
+            class="w-full pl-10 pr-9 py-2 sm:py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+          >
+          <button id="clearSearchBtn" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" title="Clear search">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Filter tabs and selectors -->
+        <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-2.5">
+          
+          <!-- Status tabs -->
+          <div class="grid grid-cols-3 sm:inline-flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60" role="tablist">
+            <button 
+              id="filterAllBtn" 
+              role="tab" 
+              aria-selected="true"
+              class="filter-tab-btn active px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-300 shadow-sm"
+              data-filter="all"
+            >
+              <span>All</span>
+              <span id="tabCountAll" class="px-1.5 py-0.2 rounded-full text-[10px] bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300">0</span>
+            </button>
+            <button 
+              id="filterActiveBtn" 
+              role="tab" 
+              aria-selected="false"
+              class="filter-tab-btn px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-1.5"
+              data-filter="active"
+            >
+              <span>Active</span>
+              <span id="tabCountActive" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">0</span>
+            </button>
+            <button 
+              id="filterCompletedBtn" 
+              role="tab" 
+              aria-selected="false"
+              class="filter-tab-btn px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-1.5"
+              data-filter="completed"
+            >
+              <span>Done</span>
+              <span id="tabCountCompleted" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">0</span>
+            </button>
+          </div>
+
+          <!-- Secondary dropdown filters in responsive sub-grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 lg:flex gap-2 w-full lg:w-auto">
+            <select 
+              id="categoryFilterSelect" 
+              title="Filter by category"
+              class="w-full px-2.5 sm:px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-xs font-medium text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
+            >
+              <option value="all">All Categories</option>
+              <option value="Work">💼 Work</option>
+              <option value="Personal">🏡 Personal</option>
+              <option value="Study">📚 Study</option>
+              <option value="Health">🏃 Health</option>
+              <option value="Finance">💰 Finance</option>
+            </select>
+
+            <select 
+              id="priorityFilterSelect" 
+              title="Filter by priority"
+              class="w-full px-2.5 sm:px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-xs font-medium text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
+            >
+              <option value="all">All Priorities</option>
+              <option value="High">🔥 High</option>
+              <option value="Medium">⚡ Medium</option>
+              <option value="Low">🌱 Low</option>
+            </select>
+
+            <select 
+              id="sortBySelect" 
+              title="Sort tasks"
+              class="w-full px-2.5 sm:px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-xs font-medium text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
+            >
+              <option value="custom">↕ Drag Order</option>
+              <option value="dueDate-asc">📅 Due Date (Earliest)</option>
+              <option value="dueDate-desc">📅 Due Date (Latest)</option>
+              <option value="priority-desc">🔥 Priority (High to Low)</option>
+              <option value="title-asc">🔤 Title (A - Z)</option>
+              <option value="created-desc">🕒 Newest First</option>
+              <option value="created-asc">🕒 Oldest First</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Action sub-bar: item count and clear completed -->
+      <div class="flex items-center justify-between gap-2 px-1 flex-wrap">
+        <div class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5 sm:gap-2 flex-wrap">
+          <span id="filteredResultsLabel" class="truncate">Showing all tasks</span>
+          <span class="text-slate-300 dark:text-slate-700 hidden xs:inline">•</span>
+          <span class="text-[10px] sm:text-[11px] text-slate-400 hidden xs:inline">Drag cards to reorder</span>
+        </div>
+
+        <button 
+          id="clearCompletedBtn" 
+          disabled
+          class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex-shrink-0"
+          title="Delete all completed tasks"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          <span>Clear Completed</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Task list container -->
+    <main>
+      <div 
+        id="taskList" 
+        class="space-y-2.5 sm:space-y-3 min-h-[140px] transition-all" 
+        aria-live="polite"
+      ></div>
+
+      <!-- Empty state container -->
+      <div id="emptyState" class="hidden flex-col items-center justify-center p-8 sm:p-12 text-center rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-900/30">
+        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-brand-50 dark:bg-slate-800 flex items-center justify-center text-brand-500 mb-3 sm:mb-4 shadow-sm">
+          <svg class="w-7 h-7 sm:w-8 sm:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <h3 id="emptyStateTitle" class="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-200">No tasks found</h3>
+        <p id="emptyStateSubtitle" class="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-sm">
+          You don't have any tasks matching your current filters. Add a new task above or try clearing your search!
+        </p>
+        <button id="emptyStateActionBtn" class="mt-4 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-md transition-all">
+          Create a Task
+        </button>
+      </div>
+    </main>
+
+    <!-- App footer -->
+    <footer class="pt-6 sm:pt-8 pb-4 text-center border-t border-slate-200 dark:border-slate-800 text-xs text-slate-400">
+      <p>
+        TaskFlow Pro • Dynamic Task Manager &amp; Productivity Tracker
+      </p>
+    </footer>
+
+  </div>
+
+  <!-- Edit Task Modal -->
+  <div id="editModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-scale-in max-h-[92vh] flex flex-col">
+      <div class="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 rounded-lg bg-brand-100 dark:bg-brand-900/60 text-brand-600 dark:text-brand-300">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          </div>
+          <h3 id="editModalTitle" class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Edit Task</h3>
+        </div>
+        <button id="closeEditModalBtn" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+
+      <form id="editTaskForm" class="p-4 sm:p-6 space-y-3.5 sm:space-y-4 overflow-y-auto">
+        <input type="hidden" id="editTaskId">
+        
+        <div>
+          <label for="editTaskTitle" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+            Task Title <span class="text-rose-500">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="editTaskTitle" 
+            required 
+            maxlength="140"
+            class="w-full px-3.5 py-2 sm:py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          >
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label for="editTaskCategory" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+              Category
+            </label>
+            <select id="editTaskCategory" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs">
+              <option value="Work">💼 Work</option>
+              <option value="Personal">🏡 Personal</option>
+              <option value="Study">📚 Study</option>
+              <option value="Health">🏃 Health</option>
+              <option value="Finance">💰 Finance</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="editTaskPriority" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+              Priority
+            </label>
+            <select id="editTaskPriority" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs">
+              <option value="High">🔥 High</option>
+              <option value="Medium">⚡ Medium</option>
+              <option value="Low">🌱 Low</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="editTaskDueDate" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+              Due Date
+            </label>
+            <input type="date" id="editTaskDueDate" class="w-full px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs">
+          </div>
+        </div>
+
+        <div>
+          <label for="editTaskNotes" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+            Notes / Description
+          </label>
+          <textarea id="editTaskNotes" rows="2" class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" id="cancelEditBtn" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-md transition-all">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm hidden" role="dialog" aria-modal="true">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm border border-slate-200 dark:border-slate-800 shadow-2xl p-5 sm:p-6 text-center animate-scale-in">
+      <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 mx-auto flex items-center justify-center mb-3 sm:mb-4">
+        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </div>
+      <h3 id="confirmModalTitle" class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Confirm Action</h3>
+      <p id="confirmModalMessage" class="mt-1.5 sm:mt-2 text-xs text-slate-500 dark:text-slate-400">
+        Are you sure you want to proceed? This action cannot be undone.
+      </p>
+      <div class="mt-5 sm:mt-6 flex items-center justify-center gap-2.5 sm:gap-3">
+        <button id="cancelConfirmBtn" class="w-1/2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          Cancel
+        </button>
+        <button id="acceptConfirmBtn" class="w-1/2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-md shadow-rose-600/30 transition-all">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container: Responsive positioning pinned safely to viewport edges -->
+  <div id="toastContainer" class="fixed bottom-4 inset-x-3 sm:inset-x-auto sm:right-5 z-50 flex flex-col gap-2 sm:max-w-sm pointer-events-none"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
